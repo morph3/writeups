@@ -4,6 +4,7 @@ Author [morph3](https://twitter.com/melihkaanyldz)
 
 Object was a windows machine. There is `Jenkins` installed, anyone can register and create projects. By setting custom build options, you can get RCE. There is an AD on the box. After jumping between users and abusing wrong permissions we can get root.  
 
+(I first blooded this box 🩸)
 ![](https://i.imgur.com/JykWvH6.png)
 
 
